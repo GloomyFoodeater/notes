@@ -3,11 +3,12 @@ package com.example.notes.model
 import android.os.Build
 import androidx.annotation.RequiresApi
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
+import kotlin.collections.ArrayList
 
-class NotesStorage : java.io.Serializable {
+class NotesStorage {
 
-    private var storageTypeFilters = mutableSetOf(StorageType.FileSystem, StorageType.SQLite)
+    private var storageFilters = linkedSetOf(StorageType.FileSystem, StorageType.SQLite)
 
     var titleQuery: String = ""
         set(value) {
@@ -15,16 +16,16 @@ class NotesStorage : java.io.Serializable {
             reFilter()
         }
 
-    private var _filtered: List<Note> = ArrayList()
-    private val _notes = ArrayList<Note>()
+    private var _filtered = ArrayList<Note>()
+    private var _notes = ArrayList<Note>()
     val notes: List<Note>
         get() = _filtered
 
     private fun reFilter() {
         _filtered = _notes.filter {
-            storageTypeFilters.contains(it.storageType) &&
+            storageFilters.contains(it.storageType) &&
                     it.title.startsWith(titleQuery, true)
-        }
+        } as ArrayList<Note>
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -59,7 +60,7 @@ class NotesStorage : java.io.Serializable {
 
         // Re filter and find position of inserted
         val isInFiltered =
-            storageTypeFilters.contains(note.storageType) && note.title.startsWith(titleQuery, true)
+            storageFilters.contains(note.storageType) && note.title.startsWith(titleQuery, true)
         if (isInFiltered) {
             reFilter()
             pos = _filtered.size - 1
@@ -69,12 +70,12 @@ class NotesStorage : java.io.Serializable {
     }
 
     fun addStorageTypeFilter(storageType: StorageType) {
-        storageTypeFilters.add(storageType)
+        storageFilters.add(storageType)
         reFilter()
     }
 
     fun removeStorageTypeFilter(storageType: StorageType) {
-        storageTypeFilters.remove(storageType)
+        storageFilters.remove(storageType)
         reFilter()
     }
 
@@ -82,7 +83,7 @@ class NotesStorage : java.io.Serializable {
         val notesPos = _notes.indexOfFirst { it.uuid.equals(uuid) }
         if (notesPos == -1) return notesPos
         val storageType = _notes[notesPos].storageType
-        val filteredPos = _filtered.indexOfFirst { it.uuid.equals(uuid) }
+        val filteredPos = _filtered.indexOfFirst { it: Note -> it.uuid.equals(uuid) }
 
         // Remove from RAM
         _notes.removeAt(notesPos)
@@ -99,5 +100,21 @@ class NotesStorage : java.io.Serializable {
         }
 
         return filteredPos
+    }
+
+    fun getState(): NotesStorageState {
+        val state = NotesStorageState()
+        state.storageFilters = storageFilters
+        state.titleQuery = titleQuery
+        state.filtered = _filtered
+        state.notes = _notes
+        return state
+    }
+
+    fun setState(state: NotesStorageState) {
+        storageFilters = state.storageFilters!!
+        titleQuery = state.titleQuery!!
+        _filtered = state.filtered!!
+        _notes = state.notes!!
     }
 }

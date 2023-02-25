@@ -9,6 +9,6 @@ class Note(
     var lastUpdateDate: LocalDate,
     val storageType: StorageType,
     var body: String
-) {
+) : java.io.Serializable {
     val uuid = UUID.randomUUID()
 }

@@ -1,10 +1,12 @@
 package com.example.notes
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.notes.model.NotesStorage
 import java.util.UUID
@@ -23,6 +25,11 @@ class NoteAdapter(private val storage: NotesStorage) :
         val inflater = LayoutInflater.from(parent.context)
         val view = inflater.inflate(R.layout.notes_list_item, parent, false)
         val holder = ViewHolder(view)
+
+        view.setOnClickListener{
+            val intent = Intent(parent.context, EditorActivity::class.java)
+            (parent.context as MainActivity).startActivity(intent)
+        }
 
         view.setOnLongClickListener {
             val builder = AlertDialog.Builder(parent.context)
