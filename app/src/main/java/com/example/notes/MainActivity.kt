@@ -7,10 +7,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.view.View.*
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.RadioGroup
+import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -20,14 +17,19 @@ import com.example.notes.model.NotesStorage
 import com.example.notes.model.StorageType
 import java.util.*
 
+@Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
+
+    var storage = NotesStorage()
+
     @SuppressLint("NotifyDataSetChanged")
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val storage = NotesStorage()
+        if (savedInstanceState != null)
+            storage = savedInstanceState.getSerializable("storage") as NotesStorage
 
         val filterContainer = findViewById<View>(R.id.filterContainer)
         val settingsContainer = findViewById<View>(R.id.settingsContainer)
@@ -35,6 +37,8 @@ class MainActivity : AppCompatActivity() {
         val searchQueryEdit = findViewById<EditText>(R.id.searchQueryEdit)
         val fsCheckbox = findViewById<CheckBox>(R.id.fsCheckbox)
         val sqliteCheckBox = findViewById<CheckBox>(R.id.sqliteCheckbox)
+        val fsRadioButton = findViewById<RadioButton>(R.id.fsRadioButton)
+        val sqliteRadioButton = findViewById<RadioButton>(R.id.sqliteRadioButton)
         val storageTypeRadioGroup = findViewById<RadioGroup>(R.id.storageTypeRadioGroup)
         val filterButton = findViewById<Button>(R.id.filterButton)
         val settingsButton = findViewById<Button>(R.id.settingsButton)
@@ -81,8 +85,19 @@ class MainActivity : AppCompatActivity() {
             else storage.removeStorageTypeFilter(StorageType.SQLite)
             notesListContainer.adapter!!.notifyDataSetChanged()
         }
+        fsRadioButton.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) fsCheckbox.isChecked = true
+        }
+        sqliteRadioButton.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) sqliteCheckBox.isChecked = true
+        }
 
         notesListContainer.layoutManager = LinearLayoutManager(this)
         notesListContainer.adapter = NoteAdapter(storage)
+    }
+
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putSerializable("storage", storage)
     }
 }

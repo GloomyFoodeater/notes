@@ -5,7 +5,7 @@ import androidx.annotation.RequiresApi
 import java.time.LocalDate
 import java.util.UUID
 
-class NotesStorage {
+class NotesStorage : java.io.Serializable {
 
     private var storageTypeFilters = mutableSetOf(StorageType.FileSystem, StorageType.SQLite)
 
@@ -36,7 +36,7 @@ class NotesStorage {
         val body = ""
 
         // Try to make unique uuid
-        val maxAttempts = 50;
+        val maxAttempts = 50
         var counter = 0
         do {
             note = Note(name, now, now, storageType, body)
@@ -44,7 +44,6 @@ class NotesStorage {
 
         // Add into RAM
         if (counter >= maxAttempts) return pos
-        note.title = note.uuid.toString()
         val res = _notes.add(note)
         if (!res) return pos
 
@@ -81,15 +80,13 @@ class NotesStorage {
 
     fun removeNoteBy(uuid: UUID): Int {
         val notesPos = _notes.indexOfFirst { it.uuid.equals(uuid) }
-        if(notesPos == -1) return notesPos
+        if (notesPos == -1) return notesPos
         val storageType = _notes[notesPos].storageType
         val filteredPos = _filtered.indexOfFirst { it.uuid.equals(uuid) }
 
         // Remove from RAM
-        if (notesPos != -1) {
-            _notes.removeAt(notesPos)
-            reFilter()
-        }
+        _notes.removeAt(notesPos)
+        reFilter()
 
         // Remove from external memory
         when (storageType) {
