@@ -6,7 +6,7 @@ import java.time.LocalDate
 import java.util.*
 import kotlin.collections.ArrayList
 
-class NotesStorage {
+class NotesStorage : java.io.Serializable {
 
     private var storageFilters = linkedSetOf(StorageType.FileSystem, StorageType.SQLite)
 
@@ -100,21 +100,5 @@ class NotesStorage {
         }
 
         return filteredPos
-    }
-
-    fun getState(): NotesStorageState {
-        val state = NotesStorageState()
-        state.storageFilters = storageFilters
-        state.titleQuery = titleQuery
-        state.filtered = _filtered
-        state.notes = _notes
-        return state
-    }
-
-    fun setState(state: NotesStorageState) {
-        storageFilters = state.storageFilters!!
-        titleQuery = state.titleQuery!!
-        _filtered = state.filtered!!
-        _notes = state.notes!!
     }
 }

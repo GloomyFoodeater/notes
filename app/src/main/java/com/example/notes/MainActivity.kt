@@ -5,7 +5,6 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.JsonWriter
 import android.view.View
 import android.view.View.*
 import android.widget.*
@@ -14,42 +13,23 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.notes.model.Note
 import com.example.notes.model.NotesStorage
-import com.example.notes.model.NotesStorageState
 import com.example.notes.model.StorageType
-import org.json.JSONObject
-import org.json.JSONStringer
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.LinkedHashSet
 
 
-@Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
 
     var storage = NotesStorage()
 
+    @Suppress("DEPRECATION")
     @SuppressLint("NotifyDataSetChanged")
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        if (savedInstanceState != null) {
-            val state = NotesStorageState()
-            with(state) {
-                storageFilters =
-                    savedInstanceState.getSerializable("storage-storage-filters") as LinkedHashSet<StorageType>?
-                titleQuery =
-                    savedInstanceState.getSerializable("storage-title-query") as String?
-                filtered =
-                    savedInstanceState.getSerializable("storage-filtered") as ArrayList<Note>?
-                notes =
-                    savedInstanceState.getSerializable("storage-notes") as ArrayList<Note>?
-            }
-            storage.setState(state)
-
-        }
+        if (savedInstanceState != null)
+            storage = savedInstanceState.getSerializable("storage") as NotesStorage
 
         val filterContainer = findViewById<View>(R.id.filterContainer)
         val settingsContainer = findViewById<View>(R.id.settingsContainer)
@@ -118,10 +98,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
-        val state = storage.getState()
-        savedInstanceState.putSerializable("storage-storage-filters", state.storageFilters)
-        savedInstanceState.putSerializable("storage-title-query", state.titleQuery)
-        savedInstanceState.putSerializable("storage-filtered", state.filtered)
-        savedInstanceState.putSerializable("storage-notes", state.notes)
+        savedInstanceState.putSerializable("storage", storage)
     }
 }
