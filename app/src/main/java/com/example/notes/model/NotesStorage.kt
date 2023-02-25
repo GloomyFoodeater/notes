@@ -3,10 +3,18 @@ package com.example.notes.model
 import android.os.Build
 import androidx.annotation.RequiresApi
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.collections.ArrayList
 
 class NotesStorage : java.io.Serializable {
+
+    private constructor()
+
+    companion object {
+        val instance = NotesStorage()
+    }
 
     private var storageFilters = linkedSetOf(StorageType.FileSystem, StorageType.SQLite)
 
@@ -17,7 +25,7 @@ class NotesStorage : java.io.Serializable {
         }
 
     private var _filtered = ArrayList<Note>()
-    private var _notes = ArrayList<Note>()
+    private val _notes = ArrayList<Note>()
     val notes: List<Note>
         get() = _filtered
 
@@ -30,13 +38,13 @@ class NotesStorage : java.io.Serializable {
         _filtered = _notes.filter(::isInFiltered) as ArrayList<Note>
     }
 
-
     @RequiresApi(Build.VERSION_CODES.O)
     fun addNote(storageType: StorageType): Int {
         var note: Note
         var pos = -1
         val name = "Untitled"
-        val now = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
+        val now = LocalDateTime.now()
         val body = ""
 
         // Try to make unique uuid
@@ -92,7 +100,7 @@ class NotesStorage : java.io.Serializable {
         return filteredPos
     }
 
-    fun editNote(note: Note) {
+    fun editNote(note: Note) : Int {
         val index = _notes.indexOfFirst { it.uuid == note.uuid }
         with(_notes[index]) {
             title = note.title
@@ -113,6 +121,8 @@ class NotesStorage : java.io.Serializable {
         if (isInFiltered(note)) {
             reFilter()
         }
+
+        return index
     }
 
     fun addStorageTypeFilter(storageType: StorageType) {
@@ -124,5 +134,4 @@ class NotesStorage : java.io.Serializable {
         storageFilters.remove(storageType)
         reFilter()
     }
-
 }

@@ -20,7 +20,7 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
-    var storage = NotesStorage()
+    var storage = NotesStorage.instance
 
     @Suppress("DEPRECATION")
     @SuppressLint("NotifyDataSetChanged")
@@ -28,8 +28,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        if (savedInstanceState != null)
-            storage = savedInstanceState.getSerializable("storage") as NotesStorage
+        storage = NotesStorage.instance
 
         val filterContainer = findViewById<View>(R.id.filterContainer)
         val settingsContainer = findViewById<View>(R.id.settingsContainer)
@@ -85,11 +84,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         notesListContainer.layoutManager = LinearLayoutManager(this)
-        notesListContainer.adapter = NoteAdapter(storage)
-    }
-
-    override fun onSaveInstanceState(savedInstanceState: Bundle) {
-        super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putSerializable("storage", storage)
+        notesListContainer.adapter = NoteAdapter.instance
     }
 }

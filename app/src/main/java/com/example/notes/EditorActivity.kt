@@ -14,6 +14,8 @@ import androidx.core.view.isVisible
 import com.example.notes.model.Note
 import com.example.notes.model.NotesStorage
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.UUID
 
 @Suppress("DEPRECATION")
 class EditorActivity : AppCompatActivity() {
@@ -21,15 +23,15 @@ class EditorActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
-        val activeNote = intent.getSerializableExtra("active-note") as Note
-        // TODO: Pass references between activities
-        val storage = intent.getSerializableExtra("storage") as NotesStorage
+        val uuid = intent.getSerializableExtra("active-note-uuid") as UUID
+        val storage = NotesStorage.instance
+        val activeNote = storage.notes.find { it.uuid.equals(uuid) }
 
         val titleEdit = findViewById<EditText>(R.id.titleEdit)
         val editorField = findViewById<EditText>(R.id.editorField)
         val saveButton = findViewById<Button>(R.id.saveButton)
 
-        titleEdit.setText(activeNote.title)
+        titleEdit.setText(activeNote!!.title)
         editorField.setText(activeNote.body)
 
         titleEdit.addTextChangedListener(object : TextWatcher {
@@ -57,10 +59,11 @@ class EditorActivity : AppCompatActivity() {
             with(activeNote) {
                 title = titleEdit.text.toString()
                 body = editorField.text.toString()
-                lastUpdateDate = LocalDate.now()
+                lastUpdateDate = LocalDateTime.now()
             }
-            storage.editNote(activeNote)
+            val pos = storage.editNote(activeNote)
             saveButton.isVisible = false
+            NoteAdapter.instance.notifyItemChanged(pos)
         }
 
     }
