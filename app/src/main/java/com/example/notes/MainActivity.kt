@@ -37,8 +37,6 @@ class MainActivity : AppCompatActivity() {
         val searchQueryEdit = findViewById<EditText>(R.id.searchQueryEdit)
         val fsCheckbox = findViewById<CheckBox>(R.id.fsCheckbox)
         val sqliteCheckBox = findViewById<CheckBox>(R.id.sqliteCheckbox)
-        val fsRadioButton = findViewById<RadioButton>(R.id.fsRadioButton)
-        val sqliteRadioButton = findViewById<RadioButton>(R.id.sqliteRadioButton)
         val storageTypeRadioGroup = findViewById<RadioGroup>(R.id.storageTypeRadioGroup)
         val filterButton = findViewById<Button>(R.id.filterButton)
         val settingsButton = findViewById<Button>(R.id.settingsButton)
@@ -84,12 +82,6 @@ class MainActivity : AppCompatActivity() {
             if (isChecked) storage.addStorageTypeFilter(StorageType.SQLite)
             else storage.removeStorageTypeFilter(StorageType.SQLite)
             notesListContainer.adapter!!.notifyDataSetChanged()
-        }
-        fsRadioButton.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) fsCheckbox.isChecked = true
-        }
-        sqliteRadioButton.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) sqliteCheckBox.isChecked = true
         }
 
         notesListContainer.layoutManager = LinearLayoutManager(this)

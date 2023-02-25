@@ -26,9 +26,12 @@ class NoteAdapter(private val storage: NotesStorage) :
         val view = inflater.inflate(R.layout.notes_list_item, parent, false)
         val holder = ViewHolder(view)
 
-        view.setOnClickListener{
+        view.setOnClickListener {
             val intent = Intent(parent.context, EditorActivity::class.java)
-            (parent.context as MainActivity).startActivity(intent)
+            val mainActivity = parent.context as MainActivity
+            intent.putExtra("active-note", storage.notes.find { it.uuid.equals(holder.uuid) })
+            intent.putExtra("storage", storage)
+            mainActivity.startActivity(intent)
         }
 
         view.setOnLongClickListener {

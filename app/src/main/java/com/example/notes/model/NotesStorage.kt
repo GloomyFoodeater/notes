@@ -21,12 +21,15 @@ class NotesStorage : java.io.Serializable {
     val notes: List<Note>
         get() = _filtered
 
-    private fun reFilter() {
-        _filtered = _notes.filter {
-            storageFilters.contains(it.storageType) &&
-                    it.title.startsWith(titleQuery, true)
-        } as ArrayList<Note>
+    private fun isInFiltered(note: Note): Boolean {
+        return storageFilters.contains(note.storageType) &&
+                note.title.startsWith(titleQuery, true)
     }
+
+    private fun reFilter() {
+        _filtered = _notes.filter(::isInFiltered) as ArrayList<Note>
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun addNote(storageType: StorageType): Int {
@@ -58,25 +61,12 @@ class NotesStorage : java.io.Serializable {
             }
         }
 
-        // Re filter and find position of inserted
-        val isInFiltered =
-            storageFilters.contains(note.storageType) && note.title.startsWith(titleQuery, true)
-        if (isInFiltered) {
+        if (isInFiltered(note)) {
             reFilter()
             pos = _filtered.size - 1
         }
 
         return pos
-    }
-
-    fun addStorageTypeFilter(storageType: StorageType) {
-        storageFilters.add(storageType)
-        reFilter()
-    }
-
-    fun removeStorageTypeFilter(storageType: StorageType) {
-        storageFilters.remove(storageType)
-        reFilter()
     }
 
     fun removeNoteBy(uuid: UUID): Int {
@@ -101,4 +91,38 @@ class NotesStorage : java.io.Serializable {
 
         return filteredPos
     }
+
+    fun editNote(note: Note) {
+        val index = _notes.indexOfFirst { it.uuid == note.uuid }
+        with(_notes[index]) {
+            title = note.title
+            body = note.body
+            lastUpdateDate = note.lastUpdateDate
+        }
+
+        // TODO: Add into external memory
+        when (note.storageType) {
+            StorageType.FileSystem -> {
+
+            }
+            StorageType.SQLite -> {
+
+            }
+        }
+
+        if (isInFiltered(note)) {
+            reFilter()
+        }
+    }
+
+    fun addStorageTypeFilter(storageType: StorageType) {
+        storageFilters.add(storageType)
+        reFilter()
+    }
+
+    fun removeStorageTypeFilter(storageType: StorageType) {
+        storageFilters.remove(storageType)
+        reFilter()
+    }
+
 }
