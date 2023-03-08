@@ -1,5 +1,6 @@
-package com.example.notes
+package com.example.notes.activities
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.view.LayoutInflater
@@ -8,21 +9,18 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
-import com.example.notes.model.NotesStorage
+import com.example.notes.R
+import com.example.notes.activities.MainActivity.Companion.storage
 import java.time.format.DateTimeFormatter
-import java.util.UUID
+import java.util.*
 
-class NoteAdapter : RecyclerView.Adapter<NoteAdapter.ViewHolder> {
 
-    private constructor() : super()
+class NotesAdapter private constructor() : RecyclerView.Adapter<NotesAdapter.ViewHolder>() {
 
     companion object {
-        val instance = NoteAdapter()
+        val instance = NotesAdapter()
     }
-
-    private val storage = NotesStorage.instance
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val title: TextView = itemView.findViewById(R.id.title)
@@ -32,6 +30,8 @@ class NoteAdapter : RecyclerView.Adapter<NoteAdapter.ViewHolder> {
         var uuid: UUID? = null
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val view = inflater.inflate(R.layout.notes_list_item, parent, false)
@@ -50,8 +50,8 @@ class NoteAdapter : RecyclerView.Adapter<NoteAdapter.ViewHolder> {
                 .setCancelable(false)
                 .setPositiveButton("Yes") { _, _ ->
                     if (holder.uuid != null) {
-                        val pos = storage.removeNoteBy(holder.uuid!!)
-                        if (pos != -1) this.notifyItemRemoved(pos)
+                        storage!!.removeNoteBy(holder.uuid!!)
+                        notifyDataSetChanged()
                     }
                 }
                 .setNegativeButton("No") { _, _ -> }
@@ -63,11 +63,11 @@ class NoteAdapter : RecyclerView.Adapter<NoteAdapter.ViewHolder> {
         return holder
     }
 
-    override fun getItemCount(): Int = storage.notes.size
+    override fun getItemCount(): Int = storage!!.notes.size
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val note = storage.notes[position]
+        val note = storage!!.notes[position]
         val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
         with(holder) {
             title.text = note.title

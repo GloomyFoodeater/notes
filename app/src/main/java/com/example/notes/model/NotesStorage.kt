@@ -2,21 +2,14 @@ package com.example.notes.model
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import java.time.LocalDate
+import com.example.notes.storageio.NotesStorageIO
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
-import kotlin.collections.ArrayList
 
-class NotesStorage : java.io.Serializable {
-
-    private constructor()
-
-    companion object {
-        val instance = NotesStorage()
-    }
-
-    private var storageFilters = linkedSetOf(StorageType.FileSystem, StorageType.SQLite)
+class NotesStorage(
+    var writer: NotesStorageIO,
+    private val readers: LinkedHashSet<NotesStorageIO>
+) {
 
     var titleQuery: String = ""
         set(value) {
@@ -24,26 +17,37 @@ class NotesStorage : java.io.Serializable {
             reFilter()
         }
 
-    private var _filtered = ArrayList<Note>()
-    private val _notes = ArrayList<Note>()
+    private val _allNotes = ArrayList<Note>()
+    private var _filteredNotes = _allNotes
     val notes: List<Note>
-        get() = _filtered
+        get() = _filteredNotes
+    private var allowedIos = LinkedHashSet<NotesStorageIO>()
 
-    private fun isInFiltered(note: Note): Boolean {
-        return storageFilters.contains(note.storageType) &&
+    init {
+        allowedIos.addAll(readers)
+        readers.forEach {
+            _allNotes.addAll(it.readAll())
+        }
+        reFilter()
+    }
+
+    private fun mustBeInFiltered(note: Note): Boolean {
+        return readers.any { it.filter == note.storageType } &&
                 note.title.startsWith(titleQuery, true)
     }
 
     private fun reFilter() {
-        _filtered = _notes.filter(::isInFiltered) as ArrayList<Note>
+        _filteredNotes = _allNotes.filter(::mustBeInFiltered) as ArrayList<Note>
+        _filteredNotes.sortByDescending { it.lastUpdateDate }
     }
 
+    private fun getIoOf(note: Note): NotesStorageIO =
+        allowedIos.find { it.filter == note.storageType }!!
+
     @RequiresApi(Build.VERSION_CODES.O)
-    fun addNote(storageType: StorageType): Int {
+    fun addNote(storageType: StorageType) {
         var note: Note
-        var pos = -1
         val name = "Untitled"
-        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
         val now = LocalDateTime.now()
         val body = ""
 
@@ -52,86 +56,53 @@ class NotesStorage : java.io.Serializable {
         var counter = 0
         do {
             note = Note(name, now, now, storageType, body)
-        } while (_notes.find { it.uuid == note.uuid } != null && counter++ < maxAttempts)
+        } while (_allNotes.find { it.uuid == note.uuid } != null && counter++ < maxAttempts)
 
         // Add into RAM
-        if (counter >= maxAttempts) return pos
-        val res = _notes.add(note)
-        if (!res) return pos
+        if (counter >= maxAttempts) return
+        val res = _allNotes.add(note)
+        if (!res) return
 
-        // TODO: Add into external memory
-        when (storageType) {
-            StorageType.FileSystem -> {
+        // Add into external memory
+        writer.write(note)
 
-            }
-            StorageType.SQLite -> {
+        if (mustBeInFiltered(note)) reFilter()
 
-            }
-        }
-
-        if (isInFiltered(note)) {
-            reFilter()
-            pos = _filtered.size - 1
-        }
-
-        return pos
     }
 
-    fun removeNoteBy(uuid: UUID): Int {
-        val notesPos = _notes.indexOfFirst { it.uuid.equals(uuid) }
-        if (notesPos == -1) return notesPos
-        val storageType = _notes[notesPos].storageType
-        val filteredPos = _filtered.indexOfFirst { it: Note -> it.uuid.equals(uuid) }
+    fun removeNoteBy(uuid: UUID) {
+        val notesPos = _allNotes.indexOfFirst { it.uuid == uuid }
+        if (notesPos == -1) return
 
         // Remove from RAM
-        _notes.removeAt(notesPos)
+        val note = _allNotes.removeAt(notesPos)
         reFilter()
 
         // Remove from external memory
-        when (storageType) {
-            StorageType.FileSystem -> {
-
-            }
-            StorageType.SQLite -> {
-
-            }
-        }
-
-        return filteredPos
+        getIoOf(note).remove(note)
     }
 
-    fun editNote(note: Note) : Int {
-        val index = _notes.indexOfFirst { it.uuid == note.uuid }
-        with(_notes[index]) {
+    fun editNote(note: Note) {
+        val index = _allNotes.indexOfFirst { it.uuid == note.uuid }
+        with(_allNotes[index]) {
             title = note.title
             body = note.body
             lastUpdateDate = note.lastUpdateDate
         }
 
-        // TODO: Add into external memory
-        when (note.storageType) {
-            StorageType.FileSystem -> {
+        // Add into external memory
+        getIoOf(note).write(note)
 
-            }
-            StorageType.SQLite -> {
-
-            }
-        }
-
-        if (isInFiltered(note)) {
-            reFilter()
-        }
-
-        return index
+        if (mustBeInFiltered(note)) reFilter()
     }
 
-    fun addStorageTypeFilter(storageType: StorageType) {
-        storageFilters.add(storageType)
+    fun addReader(io: NotesStorageIO) {
+        readers.add(io)
         reFilter()
     }
 
-    fun removeStorageTypeFilter(storageType: StorageType) {
-        storageFilters.remove(storageType)
+    fun removeReader(io: NotesStorageIO) {
+        readers.remove(io)
         reFilter()
     }
 }

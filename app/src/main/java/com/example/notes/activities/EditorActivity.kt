@@ -1,31 +1,30 @@
-package com.example.notes
+package com.example.notes.activities
 
-import android.opengl.Visibility
+import android.annotation.SuppressLint
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.View.VISIBLE
 import android.widget.Button
 import android.widget.EditText
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
-import com.example.notes.model.Note
-import com.example.notes.model.NotesStorage
-import java.time.LocalDate
+import com.example.notes.R
+import com.example.notes.activities.MainActivity.Companion.storage
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 @Suppress("DEPRECATION")
 class EditorActivity : AppCompatActivity() {
+    @SuppressLint("NotifyDataSetChanged")
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
+
         val uuid = intent.getSerializableExtra("active-note-uuid") as UUID
-        val storage = NotesStorage.instance
-        val activeNote = storage.notes.find { it.uuid.equals(uuid) }
+        val activeNote = storage!!.notes.find { it.uuid == uuid }
 
         val titleEdit = findViewById<EditText>(R.id.titleEdit)
         val editorField = findViewById<EditText>(R.id.editorField)
@@ -43,7 +42,6 @@ class EditorActivity : AppCompatActivity() {
 
             override fun afterTextChanged(s: Editable?) {}
         })
-
         editorField.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
@@ -53,17 +51,15 @@ class EditorActivity : AppCompatActivity() {
 
             override fun afterTextChanged(s: Editable?) {}
         })
-
-
         saveButton.setOnClickListener {
             with(activeNote) {
                 title = titleEdit.text.toString()
                 body = editorField.text.toString()
                 lastUpdateDate = LocalDateTime.now()
             }
-            val pos = storage.editNote(activeNote)
+            storage!!.editNote(activeNote)
             saveButton.isVisible = false
-            NoteAdapter.instance.notifyItemChanged(pos)
+            NotesAdapter.instance.notifyDataSetChanged()
         }
 
     }

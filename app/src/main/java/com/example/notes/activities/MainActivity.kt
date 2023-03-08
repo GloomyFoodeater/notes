@@ -1,4 +1,4 @@
-package com.example.notes
+package com.example.notes.activities
 
 import android.annotation.SuppressLint
 import android.os.Build
@@ -13,29 +13,43 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.notes.R
 import com.example.notes.model.NotesStorage
 import com.example.notes.model.StorageType
+import com.example.notes.storageio.FileSystemIO
+import com.example.notes.storageio.SqliteIO
+import com.example.notes.services.NotesSqliteOpenHelper
 import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        var storage: NotesStorage? = null
+    }
 
-    var storage = NotesStorage.instance
-
+    @RequiresApi(Build.VERSION_CODES.O)
     @Suppress("DEPRECATION")
     @SuppressLint("NotifyDataSetChanged")
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        storage = NotesStorage.instance
+
+        val notesFsIO = FileSystemIO("$filesDir/notes")
+        val notesSqliteIO = SqliteIO(NotesSqliteOpenHelper(this))
+
+        if (storage == null)
+            storage = NotesStorage(notesFsIO, linkedSetOf(notesFsIO, notesSqliteIO))
+
+        val storage = storage!!
 
         val filterContainer = findViewById<View>(R.id.filterContainer)
         val settingsContainer = findViewById<View>(R.id.settingsContainer)
         val notesListContainer = findViewById<RecyclerView>(R.id.notesListContainer)
         val searchQueryEdit = findViewById<EditText>(R.id.searchQueryEdit)
         val fsCheckbox = findViewById<CheckBox>(R.id.fsCheckbox)
-        val sqliteCheckBox = findViewById<CheckBox>(R.id.sqliteCheckbox)
+        val sqliteCheckbox = findViewById<CheckBox>(R.id.sqliteCheckbox)
+        val fsRadioButton = findViewById<RadioButton>(R.id.fsRadioButton)
+        val sqliteRadioButton = findViewById<RadioButton>(R.id.sqliteRadioButton)
         val storageTypeRadioGroup = findViewById<RadioGroup>(R.id.storageTypeRadioGroup)
         val filterButton = findViewById<Button>(R.id.filterButton)
         val settingsButton = findViewById<Button>(R.id.settingsButton)
@@ -56,9 +70,8 @@ class MainActivity : AppCompatActivity() {
                 else -> throw Exception("Unknown storage type")
             }
 
-            val pos = storage.addNote(storageType)
-            if (pos != -1)
-                notesListContainer.adapter!!.notifyItemInserted(pos)
+            storage.addNote(storageType)
+            notesListContainer.adapter!!.notifyDataSetChanged()
         }
         searchQueryEdit.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -73,17 +86,23 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
         fsCheckbox.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) storage.addStorageTypeFilter(StorageType.FileSystem)
-            else storage.removeStorageTypeFilter(StorageType.FileSystem)
+            if (isChecked) storage.addReader(notesFsIO)
+            else storage.removeReader(notesFsIO)
             notesListContainer.adapter!!.notifyDataSetChanged()
         }
-        sqliteCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) storage.addStorageTypeFilter(StorageType.SQLite)
-            else storage.removeStorageTypeFilter(StorageType.SQLite)
+        sqliteCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) storage.addReader(notesSqliteIO)
+            else storage.removeReader(notesSqliteIO)
             notesListContainer.adapter!!.notifyDataSetChanged()
+        }
+        fsRadioButton.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) storage.writer = notesFsIO
+        }
+        sqliteRadioButton.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) storage.writer = notesSqliteIO
         }
 
         notesListContainer.layoutManager = LinearLayoutManager(this)
-        notesListContainer.adapter = NoteAdapter.instance
+        notesListContainer.adapter = NotesAdapter.instance
     }
 }
