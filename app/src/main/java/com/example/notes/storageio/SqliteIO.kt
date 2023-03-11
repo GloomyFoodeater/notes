@@ -15,7 +15,7 @@ import java.util.*
 @RequiresApi(Build.VERSION_CODES.O)
 class SqliteIO(private val dbHelper: NotesSqliteOpenHelper) : NotesStorageIO {
 
-    override val filter = StorageType.SQLite
+    override val storageType = StorageType.SQLite
 
     private fun readNote(cursor: Cursor): Note {
         with(cursor) {

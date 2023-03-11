@@ -17,7 +17,7 @@ import java.util.*
 
 @RequiresApi(Build.VERSION_CODES.O)
 class FileSystemIO(private val path: String) : NotesStorageIO {
-    override val filter = StorageType.FileSystem
+    override val storageType = StorageType.FileSystem
 
     private fun readNote(reader: JsonReader, fileName: String): Note? {
         var note: Note? = null

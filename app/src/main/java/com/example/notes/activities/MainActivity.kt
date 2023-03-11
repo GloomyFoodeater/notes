@@ -15,7 +15,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.notes.R
 import com.example.notes.model.NotesStorage
-import com.example.notes.model.StorageType
 import com.example.notes.services.NotesSqliteOpenHelper
 import com.example.notes.storageio.FileSystemIO
 import com.example.notes.storageio.SqliteIO
@@ -52,7 +51,6 @@ class MainActivity : AppCompatActivity() {
         val sqliteCheckbox = findViewById<CheckBox>(R.id.sqliteCheckbox)
         val fsRadioButton = findViewById<RadioButton>(R.id.fsRadioButton)
         val sqliteRadioButton = findViewById<RadioButton>(R.id.sqliteRadioButton)
-        val storageTypeRadioGroup = findViewById<RadioGroup>(R.id.storageTypeRadioGroup)
         val settingsButton = findViewById<Button>(R.id.settingsButton)
         val addButton = findViewById<Button>(R.id.addButton)
 
@@ -60,13 +58,7 @@ class MainActivity : AppCompatActivity() {
             settingsContainer.isVisible = !settingsContainer.isVisible
         }
         addButton.setOnClickListener {
-            val storageType = when (storageTypeRadioGroup.checkedRadioButtonId) {
-                R.id.fsRadioButton -> StorageType.FileSystem
-                R.id.sqliteRadioButton -> StorageType.SQLite
-                else -> throw Exception("Unknown storage type")
-            }
-
-            storage.addNote(storageType)
+            storage.addNote()
             notesListContainer.adapter!!.notifyDataSetChanged()
         }
         searchQueryEdit.addTextChangedListener(object : TextWatcher {

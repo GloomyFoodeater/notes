@@ -32,7 +32,7 @@ class NotesStorage(
     }
 
     private fun mustBeInFiltered(note: Note): Boolean {
-        return readers.any { it.filter == note.storageType } &&
+        return readers.any { it.storageType == note.storageType } &&
                 note.title.startsWith(titleQuery, true)
     }
 
@@ -42,10 +42,10 @@ class NotesStorage(
     }
 
     private fun getIoOf(note: Note): NotesStorageIO =
-        allowedIos.find { it.filter == note.storageType }!!
+        allowedIos.find { it.storageType == note.storageType }!!
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun addNote(storageType: StorageType) {
+    fun addNote() {
         var note: Note
         val name = "Untitled"
         val now = LocalDateTime.now()
@@ -55,7 +55,7 @@ class NotesStorage(
         val maxAttempts = 50
         var counter = 0
         do {
-            note = Note(name, now, now, storageType, body)
+            note = Note(name, now, now, writer.storageType, body)
         } while (_allNotes.find { it.uuid == note.uuid } != null && counter++ < maxAttempts)
 
         // Add into RAM
@@ -91,7 +91,8 @@ class NotesStorage(
         }
 
         // Add into external memory
-        getIoOf(note).write(note)
+        // use of _allNotes to ignore invalid change of storage type
+        getIoOf(_allNotes[index]).write(note)
 
         if (mustBeInFiltered(note)) reFilter()
     }
