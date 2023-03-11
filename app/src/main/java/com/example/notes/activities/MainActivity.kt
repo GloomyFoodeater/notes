@@ -16,15 +16,17 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.notes.R
 import com.example.notes.model.NotesStorage
 import com.example.notes.model.StorageType
+import com.example.notes.services.NotesSqliteOpenHelper
 import com.example.notes.storageio.FileSystemIO
 import com.example.notes.storageio.SqliteIO
-import com.example.notes.services.NotesSqliteOpenHelper
 import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
     companion object {
         var storage: NotesStorage? = null
+        var fileSystemIO: FileSystemIO? = null
+        var sqliteIO: SqliteIO? = null
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -34,15 +36,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val notesFsIO = FileSystemIO("$filesDir/notes")
-        val notesSqliteIO = SqliteIO(NotesSqliteOpenHelper(this))
-
+        if (fileSystemIO == null)
+            fileSystemIO = FileSystemIO("$filesDir/notes")
+        if (sqliteIO == null)
+            sqliteIO = SqliteIO(NotesSqliteOpenHelper(this))
         if (storage == null)
-            storage = NotesStorage(notesFsIO, linkedSetOf(notesFsIO, notesSqliteIO))
+            storage = NotesStorage(fileSystemIO!!, linkedSetOf(fileSystemIO!!, sqliteIO!!))
 
         val storage = storage!!
 
-        val filterContainer = findViewById<View>(R.id.filterContainer)
         val settingsContainer = findViewById<View>(R.id.settingsContainer)
         val notesListContainer = findViewById<RecyclerView>(R.id.notesListContainer)
         val searchQueryEdit = findViewById<EditText>(R.id.searchQueryEdit)
@@ -51,16 +53,10 @@ class MainActivity : AppCompatActivity() {
         val fsRadioButton = findViewById<RadioButton>(R.id.fsRadioButton)
         val sqliteRadioButton = findViewById<RadioButton>(R.id.sqliteRadioButton)
         val storageTypeRadioGroup = findViewById<RadioGroup>(R.id.storageTypeRadioGroup)
-        val filterButton = findViewById<Button>(R.id.filterButton)
         val settingsButton = findViewById<Button>(R.id.settingsButton)
         val addButton = findViewById<Button>(R.id.addButton)
 
-        filterButton.setOnClickListener {
-            settingsContainer.isVisible = false
-            filterContainer.isVisible = !filterContainer.isVisible
-        }
         settingsButton.setOnClickListener {
-            filterContainer.isVisible = false
             settingsContainer.isVisible = !settingsContainer.isVisible
         }
         addButton.setOnClickListener {
@@ -86,20 +82,20 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
         fsCheckbox.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) storage.addReader(notesFsIO)
-            else storage.removeReader(notesFsIO)
+            if (isChecked) storage.addReader(fileSystemIO!!)
+            else storage.removeReader(fileSystemIO!!)
             notesListContainer.adapter!!.notifyDataSetChanged()
         }
         sqliteCheckbox.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) storage.addReader(notesSqliteIO)
-            else storage.removeReader(notesSqliteIO)
+            if (isChecked) storage.addReader(sqliteIO!!)
+            else storage.removeReader(sqliteIO!!)
             notesListContainer.adapter!!.notifyDataSetChanged()
         }
         fsRadioButton.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) storage.writer = notesFsIO
+            if (isChecked) storage.writer = fileSystemIO!!
         }
         sqliteRadioButton.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) storage.writer = notesSqliteIO
+            if (isChecked) storage.writer = sqliteIO!!
         }
 
         notesListContainer.layoutManager = LinearLayoutManager(this)
