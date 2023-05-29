@@ -75,7 +75,12 @@ internal class NotesStorageTest {
         // Assert
         val updatedNode = storage.notes[0]
         assert(
-            updatedNode.uuid == uuid && updatedNode.title == title && updatedNode.creationDate != newTime && updatedNode.lastUpdateDate == newTime && updatedNode.storageType != storageType && updatedNode.body == body
+            updatedNode.uuid == uuid &&
+                    updatedNode.title == title &&
+                    updatedNode.creationDate != newTime &&
+                    updatedNode.lastUpdateDate == newTime &&
+                    updatedNode.storageType != storageType &&
+                    updatedNode.body == body
         )
     }
 
